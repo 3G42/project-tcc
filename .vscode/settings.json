@@ -1,0 +1,10 @@
+{
+    "python.testing.pytestArgs": [
+        "src"
+    ],
+    "python.testing.unittestEnabled": false,
+    "python.testing.pytestEnabled": true,
+    "editor.defaultFormatter": "ms-python.black-formatter",
+    "notebook.defaultFormatter": "ms-python.black-formatter",
+    "editor.formatOnSave": true
+}
