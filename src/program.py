@@ -65,9 +65,7 @@ total_time_hour = 24 # hours
 total_simulations = int(total_time_hour * 60 / step_size_min)
 
 
-dssObj.solution.mode = 1
-dssObj.solution.step_size = step_size_sec ## ESTE VALOR DETERMINA O STEP_SIZE EM SEGUNDOS
-dssObj.solution.number = 1 ## ESTE DETERMINA QUANTAS VEZES É EXECTUADO O PASSO NA SIMULAÇÃO. DEVE FICAR EM 1. O AJUSTE É FEITO NO STEP SIZE
+## ESTE DETERMINA QUANTAS VEZES É EXECTUADO O PASSO NA SIMULAÇÃO. DEVE FICAR EM 1. O AJUSTE É FEITO NO STEP SIZE
 
 
 # %% [markdown]

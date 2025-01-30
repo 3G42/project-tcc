@@ -1,0 +1,38 @@
+Clear
+
+New Circuit.Exemplo2 phases=3 bus1=B1 basekV=115 pu = 1.0 freq=60 MVAsc3=20000000 MVAsc1=21000000
+
+New line.L1 bus1=B1 bus2=B2 r1=1.3965 x1=3.290 r0=1.730556 x0=0.062
+
+New Transformer.T1 phases=3 windings=2 buses=(B2, B3.1.2.3.4) conns=(Delta wye) kvs=(115, 13.8) kvas=(20000, 20000) xhl=11.7
+
+New Linecode.LinhaTipoX nphases=3 0.101 0.192 0.327 0.106 682.652 682.652 Normamps=350.4 438 units=mi
+
+New Line.Feeder1 bus1=B3 bus2=B4 length=4.55 linecode= LinhaTipoX
+
+New Loadshape.Curva_carga npts=24 interval=1 mult=(0.5 0.5 0.5 0.75 0.77 0.73 0.75 0.88 0.94 0.94 0.95 0.91 0.95 0.94 0.95 0.97 0.94 1 1.2 1.2 0.88 0.89 0.84 0.75)
+
+New Load.Carga1 phases=3 bus1=B4 kv=13.8 kw=5000 pf=0.92 conn=delta daily=Curva_carga
+
+New Transformer.T2 buses=(B4.1.2.3.4 B5) Conns=(Wye Delta) kVS=(13.8 13.8) kVAs=(3500 3500) XHL=8.0
+
+New Generator.GD bus1=B5 kVA=3000 kV=13.8 pf=1 Xdp=0.163 Xdpp=0.163 xd =0.4 model=1 conn=delta
+
+//Compilar Master
+Compile
+Set mode=daily
+Set stepsize=1h
+Set number=24
+Set voltagebases=[115 13.8]
+Calcv
+Calcvoltagebases
+
+//Monitores
+New Monitor.V_Trafo element= Transformer.T1 terminal=2 mode=0
+New Monitor.Pot_Trafo element= Transformer.T1 terminal=1 mode=1 ppolar=no
+New Monitor.V_Carga element= Load.Carga1 terminal=1 mode=0
+
+Solve
+
+//Mostrar alguns resultados
+!Show Voltage LN Nodes
