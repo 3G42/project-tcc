@@ -33,7 +33,7 @@ class DSSInstance(py_dss_interface.DSS):
         self.solution.step_size = (
             step_size_sec  ## ESTE VALOR DETERMINA O STEP_SIZE EM SEGUNDOS
         )
-        self.solution.number = 1
+        self.solution.number = 24
         
         self.total_steps = total_simulations
         

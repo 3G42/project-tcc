@@ -35,9 +35,9 @@ dssObj.text(f"compile {project_file}")
 # ##### Coletando itens da aplicação
 
 # %%
-nodes_names = dssObj.circuit.nodes_names
-elements_names = dssObj.circuit.elements_names
-buses_names=dssObj.circuit.buses_names
+nodes = dssObj.circuit.nodes_names
+elements = dssObj.circuit.elements_names
+buses=dssObj.circuit.buses_names
 num_buses = dssObj.circuit.num_buses
 num_cktelement = dssObj.circuit.num_ckt_elements
 
