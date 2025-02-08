@@ -12,6 +12,7 @@
 
 # %%
 import datetime
+import os
 import numpy as np
 import pandas as pd
 import py_dss_interface as pydss
@@ -26,20 +27,34 @@ def str_to_time(string:str):
 # %% [markdown]
 # ##### Instanciando py-dss
 
-# %%
-dssObj = pydss.DSS()
-project_file = r"C:/Users/gabri/project-tcc/src/circbtfull_storage.dss"
-dssObj.text(f"compile {project_file}")
 
-# %% [markdown]
-# ##### Coletando itens da aplicação
+## Instanciando o DSS
+dss = pydss.DSS()
+dss.dssinterface.allow_forms = False
 
-# %%
-nodes = dssObj.circuit.nodes_names
-elements = dssObj.circuit.elements_names
-buses=dssObj.circuit.buses_names
-num_buses = dssObj.circuit.num_buses
-num_cktelement = dssObj.circuit.num_ckt_elements
+project_file = os.path.join(os.path.dirname(__file__),"circbtfull_storage.dss")
+
+
+dss.text(f"Compile {project_file}")
+dss.text('Set mode=daily')
+dss.text("Set stepsize=1h")
+dss.text("Set number=24")
+
+
+
+### Nome de elementos principais do circuito
+buses = dss.circuit.buses_names
+nodes = dss.circuit.nodes_names
+elements = dss.circuit.elements_names
+transformers = dss.transformers.names  
+lines = dss.lines.names
+
+for l in lines:
+    dss.text("New Monitor")
+
+
+num_buses = dss.circuit.num_buses
+num_cktelement = dss.circuit.num_ckt_elements
 
 # %% [markdown]
 # ### 2. Simulação de caso inicial
@@ -48,10 +63,10 @@ num_cktelement = dssObj.circuit.num_ckt_elements
 # %%
 
 for element in elements_names:
-    dssObj.circuit.set_active_element(element)
+    dss.circuit.set_active_element(element)
     if not (element.find("Generator.") == -1  and element.find("Storage.") == -1):
-        if dssObj.cktelement.is_enabled == 1:
-            dssObj.cktelement.enabled(0)
+        if dss.cktelement.is_enabled == 1:
+            dss.cktelement.enabled(0)
 
 
 
@@ -76,10 +91,10 @@ header = pd.date_range('00:00:00', periods=total_simulations, freq=f'{step_size_
 df = pd.DataFrame(index=nodes_names,columns=header)
 
 for h in range(total_simulations):
-    instant = datetime.time(hour=dssObj.solution.hour,minute=int(dssObj.solution.seconds // 60)).strftime('%H:%M')
-    dssObj.solution.solve()
+    instant = datetime.time(hour=dss.solution.hour,minute=int(dss.solution.seconds // 60)).strftime('%H:%M')
+    dss.solution.solve()
     
-    bus_voltages = dssObj.circuit.buses_volts
+    bus_voltages = dss.circuit.buses_volts
     df[instant] = [
         (bus_voltages[j] + 1j * bus_voltages[j+1]) for j in range(0,len(bus_voltages),2)
     ]
@@ -123,12 +138,12 @@ for bus,group in grouped:
 
 # %%
 for element in elements_names:
-    dssObj.circuit.set_active_element(element)
+    dss.circuit.set_active_element(element)
     if not (element.find("Generator.") == -1):
-        if dssObj.cktelement.is_enabled == 0:
-            dssObj.cktelement.enabled(1)
+        if dss.cktelement.is_enabled == 0:
+            dss.cktelement.enabled(1)
 
-dssObj.solution.dbl_hour = 0.0
+dss.solution.dbl_hour = 0.0
             
 
 # %%
@@ -136,10 +151,10 @@ header = pd.date_range('00:00:00', periods=total_simulations, freq=f'{step_size_
 df_new = pd.DataFrame(index=nodes_names,columns=header)
 
 for h in range(total_simulations):
-    instant = datetime.time(hour=dssObj.solution.hour,minute=int(dssObj.solution.seconds // 60)).strftime('%H:%M')
-    dssObj.solution.solve()
+    instant = datetime.time(hour=dss.solution.hour,minute=int(dss.solution.seconds // 60)).strftime('%H:%M')
+    dss.solution.solve()
     
-    bus_voltages = dssObj.circuit.buses_volts
+    bus_voltages = dss.circuit.buses_volts
     df_new[instant] = [
         (bus_voltages[j] + 1j * bus_voltages[j+1]) for j in range(0,len(bus_voltages),2)
     ]
