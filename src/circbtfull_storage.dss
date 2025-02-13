@@ -99,15 +99,15 @@ New Load.P15_IP Bus1=P15.1.3.4 phases=1 conn=wye Model=5 kV=0.22 kW=0.15 pf=1.0 
 New Storage.BateriaP7 bus=P7.1.2.3.4 phases=3 kv=0.22 conn=wye kwrated=25 kwhrated=150 dispmode=follow daily=Storage_Device
 
 // Monitores
-New Monitor.VP7 element= Load.P7_1 terminal=1 mode=0
-New Monitor.PTRAFO element= Transformer.Trafo terminal=1 mode=1 ppolar=no
+// New Monitor.VP7 element= Load.P7_1 terminal=1 mode=0
+// New Monitor.PTRAFO element= Transformer.Trafo terminal=1 mode=1 ppolar=no
 
-!New monitor.BAT_P7_power element=Storage.BateriaP7 terminal=1 mode=1 ppolar=no
-!New monitor.BAT_P7_voltage element=Storage.BateriaP7 terminal=1 mode=0
-!New monitor.BAT_P7_variables element=Storage.BateriaP7 terminal=1 mode=3
+// !New monitor.BAT_P7_power element=Storage.BateriaP7 terminal=1 mode=1 ppolar=no
+// !New monitor.BAT_P7_voltage element=Storage.BateriaP7 terminal=1 mode=0
+// !New monitor.BAT_P7_variables element=Storage.BateriaP7 terminal=1 mode=3
 
-// Medidor de Energia
-New EnergyMeter.ETRAFO element= Transformer.TRAFO terminal=1
+// // Medidor de Energia
+// New EnergyMeter.ETRAFO element= Transformer.TRAFO terminal=1
 
 Set voltagebases=[13.8 0.22 ]
 Calcvoltagebases
