@@ -1,236 +1,218 @@
-# %% [markdown]
-# # TCC
-# 
-# 
-
-# %% [markdown]
-# 
-# ### 1. Introdução
-
-# %% [markdown]
-# ##### Importando libs
-
-# %%
 import datetime
 import math
 import os
 import numpy as np
 import pandas as pd
 import py_dss_interface as pydss
-import seaborn as sns
-import matplotlib.pyplot as plt
-import matplotlib.dates as mdates
+import plotly.express as px
 
 
-def str_to_time(string:str):
-    return datetime.datetime.strptime(string,'%H:%M')
+def str_to_time(string: str):
+    return datetime.datetime.strptime(string, "%H:%M")
 
-# %% [markdown]
-# ##### Instanciando py-dss
+
+def initial_state_simulation(dss):
+    # Desativando as baterias
+    elements = dss.circuit.elements_names
+    for element in elements:
+        dss.circuit.set_active_element(element)
+        if not (element.find("Generator.") == -1 and element.find("Storage.") == -1):
+            if dss.cktelement.is_enabled == 1:
+                dss.cktelement.enabled(0)
+    dss.solution.solve()
+
+
+def only_gd_simulation(dss):
+    elements = dss.circuit.elements_names
+    for element in elements:
+        dss.circuit.set_active_element(element)
+        if not (element.find("Storage.") == -1):
+            if dss.cktelement.is_enabled == 1:
+                dss.cktelement.enabled(0)
+    dss.solution.solve()
+
+
+def with_gd_storage_simulation(dss,storages):
+    elements = dss.circuit.elements_names
+    for element in elements:
+        dss.circuit.set_active_element(element)
+        if not (element.find("Storage.") == -1):
+            if dss.cktelement.is_enabled == 1:
+                dss.cktelement.enabled(0)
+    for storage in storages:
+        dss.text(f"New Storage.{storage['Barra']} phases=3 bus={storage['Barra']}.1.2.3.4 kV=0.22 kWRated={storage['Potencia nominal']} kWhrated={storage['Energia nominal']} dispmode=follow daily=CurvaBAT")
+    dss.solution.solve()
+
+def intialize_voltage_dataframes(v_monitors):
+
+    va_df = pd.DataFrame(
+        np.zeros((48, len(v_monitors))), index=np.arange(stop=24, start=0, step=0.5)
+    )
+    vb_df = pd.DataFrame(
+        np.zeros((48, len(v_monitors))), index=np.arange(stop=24, start=0, step=0.5)
+    )
+    vc_df = pd.DataFrame(
+        np.zeros((48, len(v_monitors))), index=np.arange(stop=24, start=0, step=0.5)
+    )
+    va_df.columns = v_monitors
+    vb_df.columns = v_monitors
+    vc_df.columns = v_monitors
+
+    return {"va_df": va_df, "vb_df": vb_df, "vc_df": vc_df}
+
+
+def initilalize_power_dataframes(p_monitors):
+    pa_df = pd.DataFrame(
+        np.zeros((48, len(p_monitors))), index=np.arange(stop=24, start=0, step=0.5)
+    )
+    pb_df = pd.DataFrame(
+        np.zeros((48, len(p_monitors))), index=np.arange(stop=24, start=0, step=0.5)
+    )
+    pc_df = pd.DataFrame(
+        np.zeros((48, len(p_monitors))), index=np.arange(stop=24, start=0, step=0.5)
+    )
+    qa_df = pd.DataFrame(
+        np.zeros((48, len(p_monitors))), index=np.arange(stop=24, start=0, step=0.5)
+    )
+    qb_df = pd.DataFrame(
+        np.zeros((48, len(p_monitors))), index=np.arange(stop=24, start=0, step=0.5)
+    )
+    qc_df = pd.DataFrame(
+        np.zeros((48, len(p_monitors))), index=np.arange(stop=24, start=0, step=0.5)
+    )
+    p0_df = pd.DataFrame(
+        np.zeros((48, len(p_monitors))), index=np.arange(stop=24, start=0, step=0.5)
+    )
+    q0_df = pd.DataFrame(
+        np.zeros((48, len(p_monitors))), index=np.arange(stop=24, start=0, step=0.5)
+    )
+    pa_df.columns = p_monitors
+    pb_df.columns = p_monitors
+    pc_df.columns = p_monitors
+    qa_df.columns = p_monitors
+    qb_df.columns = p_monitors
+    qc_df.columns = p_monitors
+    p0_df.columns = p_monitors
+    q0_df.columns = p_monitors
+    return {
+        0: pa_df,
+        1: qa_df,
+        2: pb_df,
+        3: qb_df,
+        4: pc_df,
+        5: qc_df,
+        6: p0_df,
+        7: q0_df,
+    }
+
+
+def get_power_dataframes(dss, monitors):
+
+    p_monitors = [m for m in monitors if m.find("p_") != -1]
+    print(p_monitors)
+    p_dfs = initilalize_power_dataframes(p_monitors)
+    dss.monitors.first()
+
+    for _ in p_monitors:
+        dss.monitors.name = _
+        for key, value in p_dfs.items():
+            value[_] = dss.monitors.channel(key + 1)
+
+    return p_dfs
+
+
+def get_voltage_dataframes(dss, monitors):
+    v_monitors = [m for m in monitors if m.find("v_") != -1]
+    print(v_monitors)
+    v_dfs = intialize_voltage_dataframes(v_monitors)
+    dss.monitors.first()
+    for _ in v_monitors:
+        dss.monitors.name = _
+        v_dfs["va_df"][_] = dss.monitors.channel(1)
+        v_dfs["vb_df"][_] = dss.monitors.channel(3)
+        v_dfs["vc_df"][_] = dss.monitors.channel(5)
+        v_dfs["va_df"][_] = v_dfs["va_df"][_].div(127)
+        v_dfs["vb_df"][_] = v_dfs["vb_df"][_].div(127)
+        v_dfs["vc_df"][_] = v_dfs["vc_df"][_].div(127)
+    return v_dfs
 
 
 ## Instanciando o DSS
-dss = pydss.DSS()
-# dss.dssinterface.allow_forms = False
-
-project_file = os.path.join(os.path.dirname(__file__),"circbtfull_storage.dss")
-
-
-dss.text(f"Compile {project_file}")
-dss.text('Set mode=daily')
-dss.text("Set stepsize=1h")
-dss.text("Set number=24")
-
+def programa(option="start-case",storage_specs=[]):
+    
+    
+    dss = pydss.DSS()
+    project_file = os.path.join(os.path.dirname(__file__), "circbtfull_storage.dss")
+    dss.text(f"Compile {project_file}")
+    dss.text("Set mode=daily")
+    dss.text("Set stepsize=0.5h")
+    dss.text("Set number=48")
 
 
-### Nome de elementos principais do circuito
-buses = dss.circuit.buses_names
-nodes = dss.circuit.nodes_names
-elements = dss.circuit.elements_names
-transformers = dss.transformers.names  
-lines = dss.lines.names
-
-for l in lines:
-    print(l)
-    dss.text(f"New Monitor.V_{l}_T1 element=Line.{l} terminal=1 mode=0 ")
-    dss.text(f"New Monitor.V_{l}_T2 element=Line.{l} terminal=2 mode=0 ")
-
-
-for t in transformers:
-    dss.text(f"New Monitor.P_{t} element=Transformer.{t} terminal=1 mode=1 ppolar=no")
-
-
-
-monitors = dss.monitors.names
-
-
-
-
-
-###############################################################
-### Simulando para o estado inicial: Sem GD e Armazenamento ###
-###############################################################
-
-#Desativando as baterias
-for element in elements:
-    dss.circuit.set_active_element(element)
-    if not (element.find("Generator.") == -1  and element.find("Storage.") == -1):
-        if dss.cktelement.is_enabled == 1:
-            dss.cktelement.enabled(0)
-            
-            
-dss.solution.solve()        
+    transformers = dss.transformers.names
+    lines = dss.lines.names
+    buses_monitored = []
 
     
-va_df = pd.DataFrame(np.zeros((24,len(monitors)-1)))
-vb_df = pd.DataFrame(np.zeros((24,len(monitors)-1)))
-vc_df = pd.DataFrame(np.zeros((24,len(monitors)-1)))
-va_df.columns = monitors[0:len(monitors)-1]
-vb_df.columns = monitors[0:len(monitors)-1]
-vc_df.columns = monitors[0:len(monitors)-1]
+    for l in lines:
+        t1, t2 = l.split("_", 2)
+        if not t1 in buses_monitored:
+            dss.text(f"New Monitor.V_{t1} element =Line.{l} terminal=1 mode=0")
+            buses_monitored.append(t1)
+        if not t2 in buses_monitored:
+            dss.text(f"New Monitor.V_{t2} element =Line.{l} terminal=2 mode=0")
+            buses_monitored.append(t2)
 
-dss.monitors.first()
-for _ in monitors:
-    if _!='p_trafo': 
-        va_df[_] = dss.monitors.channel(1)
-        vb_df[_] = dss.monitors.channel(3)
-        vc_df[_] = dss.monitors.channel(5)
-    
-    dss.monitors.name = _
-    
+    for t in transformers:
+        dss.text(
+            f"New Monitor.P_{t} element=Transformer.{t} terminal=1 mode=1 ppolar=no"
+        )
 
-# va_df = va_df.div((127/math.sqrt(3)))
+    monitors = dss.monitors.names
 
-print(va_df)
-print(vb_df)
-print(vc_df)
+    match option:
+        case "start-case":
+            initial_state_simulation(dss)
+            powers = get_power_dataframes(dss, monitors)
+            voltages = get_voltage_dataframes(dss, monitors)
 
+        case "without-storage":
+            only_gd_simulation(dss)
+            powers = get_power_dataframes(dss, monitors)
+            voltages = get_voltage_dataframes(dss, monitors)
+        case "with-gd-storage":
+            with_gd_storage_simulation(dss,storage_specs)
+            powers = get_power_dataframes(dss, monitors)
+            voltages = get_voltage_dataframes(dss, monitors)
+        case _:
+            return
+        
+        
 
+    data = dict(
+        {
+            "va": voltages["va_df"].to_json(orient="split"),
+            "vb": voltages["vb_df"].to_json(orient="split"),
+            "vc": voltages["vc_df"].to_json(orient="split"),
+            "pa": powers[0].to_json(orient="split"),
+            "qa": powers[1].to_json(orient="split"),
+            "pb": powers[2].to_json(orient="split"),
+            "qb": powers[3].to_json(orient="split"),
+            "pc": powers[4].to_json(orient="split"),
+            "qc": powers[5].to_json(orient="split"),
+            "p0": powers[6].to_json(orient="split"),
+            "q0": powers[7].to_json(orient="split"),
+        }
+    )
 
-# # %%
-# step_size_min = 15
-# step_size_sec = 60*step_size_min # SEGUNDOS
-# total_time_hour = 24 # hours
-# total_simulations = int(total_time_hour * 60 / step_size_min)
-
-
-# ## ESTE DETERMINA QUANTAS VEZES É EXECTUADO O PASSO NA SIMULAÇÃO. DEVE FICAR EM 1. O AJUSTE É FEITO NO STEP SIZE
-
-
-# # %% [markdown]
-# # Coletaremos a curva de tensão, e de potência de cada barra do circuito 
-
-# # %%
-# header = pd.date_range('00:00:00', periods=total_simulations, freq=f'{step_size_min}min').strftime('%H:%M')
-# df = pd.DataFrame(index=nodes_names,columns=header)
-
-# for h in range(total_simulations):
-#     instant = datetime.time(hour=dss.solution.hour,minute=int(dss.solution.seconds // 60)).strftime('%H:%M')
-#     dss.solution.solve()
-    
-#     bus_voltages = dss.circuit.buses_volts
-#     df[instant] = [
-#         (bus_voltages[j] + 1j * bus_voltages[j+1]) for j in range(0,len(bus_voltages),2)
-#     ]
-
-# df['Bus'] = [
-#     n.split('.')[0] for n in df.index
-# ]
-# df['Phase'] = [
-#     n.split('.')[1] for n in df.index
-# ]   
-
-
-# # %%
-# grouped = df.groupby('Bus')
-# rows_subplot = len(df['Bus'].unique())//2 if len(df['Bus'].unique())%2 == 0 else len(df['Bus'].unique())//2 + 1
-
-# # %%
-# for bus,group in grouped:
-#     group_transposed = group.T
-#     group_transposed.columns = [f"Voltage_{p}" for p in group_transposed.loc['Phase']]
-#     group_transposed = group_transposed.drop(index=['Bus','Phase'])
-#     if 'Voltage_4' in group_transposed.columns:
-#         group_transposed = group_transposed.drop(columns="Voltage_4")
-#     group_transposed = group_transposed.map(abs)
-#     group_transposed.index = group_transposed.index.map(str_to_time)
-#     plt.figure()
-    
-#     for column in group_transposed.columns:
-#         plt.plot(group_transposed.index, group_transposed[column], label=column)
-    
-#     plt.title(f'Tensão em função do horário para a barra {bus}')
-#     plt.xlabel('Horário')
-#     plt.ylabel('Tensão (V)')
-#     plt.gca().xaxis.set_major_locator(mdates.HourLocator(interval=1))
-#     plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%H:%M'))
-#     plt.xticks(rotation=45)
-#     plt.legend()
-#     plt.tight_layout()
-#     plt.savefig(f'voltage_plot_{bus}.png')  # Salvando o gráfico como imagem
-
-
-# # %%
-# for element in elements_names:
-#     dss.circuit.set_active_element(element)
-#     if not (element.find("Generator.") == -1):
-#         if dss.cktelement.is_enabled == 0:
-#             dss.cktelement.enabled(1)
-
-# dss.solution.dbl_hour = 0.0
-            
-
-# # %%
-# header = pd.date_range('00:00:00', periods=total_simulations, freq=f'{step_size_min}min').strftime('%H:%M')
-# df_new = pd.DataFrame(index=nodes_names,columns=header)
-
-# for h in range(total_simulations):
-#     instant = datetime.time(hour=dss.solution.hour,minute=int(dss.solution.seconds // 60)).strftime('%H:%M')
-#     dss.solution.solve()
-    
-#     bus_voltages = dss.circuit.buses_volts
-#     df_new[instant] = [
-#         (bus_voltages[j] + 1j * bus_voltages[j+1]) for j in range(0,len(bus_voltages),2)
-#     ]
+    return data
 
     
 
-
-# # %%
-# df_new['Bus'] = [
-#     n.split('.')[0] for n in df_new.index
-# ]
-# df_new['Phase'] = [
-#     n.split('.')[1] for n in df_new.index
-# ]
-
-# grouped_new = df_new.groupby('Bus')
-# rows_subplot = len(df_new['Bus'].unique())//2 if len(df_new['Bus'].unique())%2 == 0 else len(df_new['Bus'].unique())//2 + 1
-
-# # %%
-# for bus,group in grouped_new:
-#     group_transposed = group.T
-#     group_transposed.columns = [f"Voltage_{p}" for p in group_transposed.loc['Phase']]
-#     group_transposed = group_transposed.drop(index=['Bus','Phase'])
-#     if 'Voltage_4' in group_transposed.columns:
-#         group_transposed = group_transposed.drop(columns="Voltage_4")
-#     group_transposed = group_transposed.map(abs)
-#     group_transposed.index = group_transposed.index.map(str_to_time)
-#     plt.figure()
     
-#     for column in group_transposed.columns:
-#         plt.plot(group_transposed.index, group_transposed[column], label=column)
     
-#     plt.title(f'Tensão em função do horário para a barra {bus}')
-#     plt.xlabel('Horário')
-#     plt.ylabel('Tensão (V)')
-#     plt.gca().xaxis.set_major_locator(mdates.HourLocator(interval=1))
-#     plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%H:%M'))
-#     plt.xticks(rotation=45)
-#     plt.legend()
-#     plt.tight_layout()
-#     plt.savefig(f'voltage_plot_{bus}.png')  # Salvando o gráfico como imagem
-
-
-# # %%
-
+    
+    
+    
+if __name__ == "__main__":
+    programa()
