@@ -1,0 +1,27 @@
+@import url('https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100..900;1,100..900&display=swap');
+body {
+    font-family: 'Roboto', monospace;
+
+
+}
+h1, h2, h3, h4, h5, h6 {
+    font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
+    font-weight: 500;
+}
+
+p{
+    font-weight: 500;
+}
+
+label {
+    font-weight: 400;
+}
+
+.disabled, .disabled>*{
+    color: #ccc;
+}
+
+.disabled:hover, .disabled>*{
+    cursor: not-allowed;
+    pointer-events: none;
+}
