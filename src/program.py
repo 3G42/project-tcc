@@ -40,7 +40,7 @@ def with_gd_storage_simulation(dss,storages):
             if dss.cktelement.is_enabled == 1:
                 dss.cktelement.enabled(0)
     for storage in storages:
-        dss.text(f"New Storage.{storage['Barra']} phases=3 bus={storage['Barra']}.1.2.3.4 kV=0.22 kWRated={storage['Potencia nominal']} kWhrated={storage['Energia nominal']} dispmode=follow daily=CurvaBAT")
+        dss.text(f"New Storage.Bus{storage[0]} phases=3 bus={storage[0]}.1.2.3.4 kV=0.22 kWRated={storage[1]} kWhrated={storage[2]} dispmode=follow daily=Storage_Device")
     dss.solution.solve()
 
 def intialize_voltage_dataframes(v_monitors):
@@ -139,7 +139,7 @@ def volts_to_pu(voltage: pd.DataFrame):
     return voltage
 
 ## Instanciando o DSS
-def programa(option="without-storage",storage_specs=[]):
+def programa(id_value,option="without-storage",storage_specs=[]):
     
     
     dss = pydss.DSS()
@@ -172,12 +172,12 @@ def programa(option="without-storage",storage_specs=[]):
     monitors = dss.monitors.names
 
     match option:
-        case "start-case":
+        case "without-gd-storage":
             initial_state_simulation(dss)
             powers = get_power_dataframes(dss, monitors)
             voltages = get_voltage_dataframes(dss, monitors)
 
-        case "without-storage":
+        case "with-gd-without-storage":
             only_gd_simulation(dss)
             powers = get_power_dataframes(dss, monitors)
             voltages = get_voltage_dataframes(dss, monitors)
@@ -196,6 +196,7 @@ def programa(option="without-storage",storage_specs=[]):
         v_buses_quality[column] = voltage_quality(voltages,column)
     data = dict(
         {
+            "id": id_value,
             "va": volts_to_pu(voltages["va_df"]).to_json(orient="split"),
             "vb": volts_to_pu(voltages["vb_df"]).to_json(orient="split"),
             "vc": volts_to_pu(voltages["vc_df"]).to_json(orient="split"),
