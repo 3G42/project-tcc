@@ -40,20 +40,24 @@ def with_gd_storage_simulation(dss,storages):
             if dss.cktelement.is_enabled == 1:
                 dss.cktelement.enabled(0)
     for storage in storages:
-        dss.text(f"New Storage.Bus{storage[0]} phases=3 bus={storage[0]}.1.2.3.4 kV=0.22 kWRated={storage[1]} kWhrated={storage[2]} dispmode=follow daily=Storage_Device")
+        print(storage)
+        dss.text(f"New Storage.Bateria{storage[0]} bus=P{storage[0]}.1.2.3.4 phases=3 kv=0.22 conn=wye kwrated={storage[1]} kwhrated={storage[2]} %stored=0.0 dispmode=follow daily=CurvaBAT")
     dss.solution.solve()
 
 def intialize_voltage_dataframes(v_monitors):
 
     va_df = pd.DataFrame(
-        np.zeros((48, len(v_monitors))), index=np.arange(stop=24, start=0, step=0.5)
+        np.zeros((144, len(v_monitors))), index=np.arange(stop=24, start=0, step=0.1666666667)
     )
     vb_df = pd.DataFrame(
-        np.zeros((48, len(v_monitors))), index=np.arange(stop=24, start=0, step=0.5)
+        np.zeros((144, len(v_monitors))), index=np.arange(stop=24, start=0, step=0.1666666667)
     )
     vc_df = pd.DataFrame(
-        np.zeros((48, len(v_monitors))), index=np.arange(stop=24, start=0, step=0.5)
+        np.zeros((144, len(v_monitors))), index=np.arange(stop=24, start=0, step=0.1666666667)
     )
+    
+    print(va_df.shape)
+    print(vb_df.shape)
     va_df.columns = v_monitors
     vb_df.columns = v_monitors
     vc_df.columns = v_monitors
@@ -63,28 +67,28 @@ def intialize_voltage_dataframes(v_monitors):
 
 def initilalize_power_dataframes(p_monitors):
     pa_df = pd.DataFrame(
-        np.zeros((48, len(p_monitors))), index=np.arange(stop=24, start=0, step=0.5)
+        np.zeros((144, len(p_monitors))), index=np.arange(stop=24, start=0, step=0.1666666667)
     )
     pb_df = pd.DataFrame(
-        np.zeros((48, len(p_monitors))), index=np.arange(stop=24, start=0, step=0.5)
+        np.zeros((144, len(p_monitors))), index=np.arange(stop=24, start=0, step=0.1666666667)
     )
     pc_df = pd.DataFrame(
-        np.zeros((48, len(p_monitors))), index=np.arange(stop=24, start=0, step=0.5)
+        np.zeros((144, len(p_monitors))), index=np.arange(stop=24, start=0, step=0.1666666667)
     )
     qa_df = pd.DataFrame(
-        np.zeros((48, len(p_monitors))), index=np.arange(stop=24, start=0, step=0.5)
+        np.zeros((144, len(p_monitors))), index=np.arange(stop=24, start=0, step=0.1666666667)
     )
     qb_df = pd.DataFrame(
-        np.zeros((48, len(p_monitors))), index=np.arange(stop=24, start=0, step=0.5)
+        np.zeros((144, len(p_monitors))), index=np.arange(stop=24, start=0, step=0.1666666667)
     )
     qc_df = pd.DataFrame(
-        np.zeros((48, len(p_monitors))), index=np.arange(stop=24, start=0, step=0.5)
+        np.zeros((144, len(p_monitors))), index=np.arange(stop=24, start=0, step=0.1666666667)
     )
     p0_df = pd.DataFrame(
-        np.zeros((48, len(p_monitors))), index=np.arange(stop=24, start=0, step=0.5)
+        np.zeros((144, len(p_monitors))), index=np.arange(stop=24, start=0, step=0.1666666667)
     )
     q0_df = pd.DataFrame(
-        np.zeros((48, len(p_monitors))), index=np.arange(stop=24, start=0, step=0.5)
+        np.zeros((144, len(p_monitors))), index=np.arange(stop=24, start=0, step=0.1666666667)
     )
     pa_df.columns = p_monitors
     pb_df.columns = p_monitors
@@ -129,7 +133,7 @@ def get_voltage_dataframes(dss, monitors):
         v_dfs["va_df"][_] = dss.monitors.channel(1)
         v_dfs["vb_df"][_] = dss.monitors.channel(3)
         v_dfs["vc_df"][_] = dss.monitors.channel(5)
-
+    print(v_dfs["va_df"])
     return v_dfs
 
 def volts_to_pu(voltage: pd.DataFrame):
@@ -145,9 +149,7 @@ def programa(id_value,option="without-storage",storage_specs=[]):
     dss = pydss.DSS()
     project_file = os.path.join(os.path.dirname(__file__), "circbtfull_storage.dss")
     dss.text(f"Compile {project_file}")
-    dss.text("Set mode=daily")
-    dss.text("Set stepsize=0.5h")
-    dss.text("Set number=48")
+
 
 
     transformers = dss.transformers.names
@@ -158,10 +160,10 @@ def programa(id_value,option="without-storage",storage_specs=[]):
     for l in lines:
         t1, t2 = l.split("_", 2)
         if not t1 in buses_monitored:
-            dss.text(f"New Monitor.V_{t1} element =Line.{l} terminal=1 mode=0")
+            dss.text(f"New Monitor.V_{t1} element=Line.{l} terminal=1 mode=0")
             buses_monitored.append(t1)
         if not t2 in buses_monitored:
-            dss.text(f"New Monitor.V_{t2} element =Line.{l} terminal=2 mode=0")
+            dss.text(f"New Monitor.V_{t2} element=Line.{l} terminal=2 mode=0")
             buses_monitored.append(t2)
 
     for t in transformers:
@@ -192,8 +194,8 @@ def programa(id_value,option="without-storage",storage_specs=[]):
 
     
     v_buses_quality = pd.DataFrame()
-    for column in voltages['va_df'].columns:
-        v_buses_quality[column] = voltage_quality(voltages,column)
+    # for column in voltages['va_df'].columns:
+    #     v_buses_quality[column] = voltage_quality(voltages,column)
     data = dict(
         {
             "id": id_value,
