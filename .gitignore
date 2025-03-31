@@ -1,0 +1,12 @@
+not_included
+
+venv
+
+.pytest_cache
+
+.idea
+
+pdf 
+
+purposes
+
