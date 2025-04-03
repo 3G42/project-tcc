@@ -1,6 +1,6 @@
 not_included
 
-venv
+.venv
 
 .pytest_cache
 
@@ -9,4 +9,6 @@ venv
 pdf 
 
 purposes
+
+*/__pycache__
 
