@@ -47,31 +47,7 @@ register_page(
     path="/",
     layout=[
         # Seletor de simulação
-        dmc.Flex(
-            children=[
-                dmc.Title("Simulação", className="menu-title", order=6, w="100%"),
-                dmc.Select(
-                    id="simulation-select",
-                    data=[],
-                    placeholder="Selecione a simulação",
-                    disabled=True,
-                    maw="800px",
-                    w="80%",
-                ),
-                dmc.Button(
-                    "Nova simulação",
-                    id="new-simulation-button",
-                    w="fit-content",
-                    n_clicks=0,
-                ),
-            ],
-            direction="row",
-            wrap="wrap",
-            justify="space-between",
-            my="md",
-            mx="md",
-            style={"boxSize": "content-box"},
-        ),
+        
         dmc.Modal(
             title="Nova simulação",
             id="modal-simple",

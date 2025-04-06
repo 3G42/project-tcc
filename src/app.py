@@ -34,12 +34,45 @@ app.layout = dmc.MantineProvider(
                     pt="lg",
                     pb="md",
                 ),
-        dmc.Box([
-            dmc.NavLink(label="home", href="/", active='exact'),
-            dmc.NavLink(label="indicadores",href='/indicators'),
-            dmc.Divider(mb="lg"),
-            page_container
-        ]),
+        dmc.Flex(
+            [ 
+                dmc.Box(
+                    children=[
+                        dmc.NavLink(label="home", href="/", active='exact'),
+                        dmc.NavLink(label="indicadores",href='/indicators', active='exact'),
+                    ],
+                    w="100%",
+                    display='flex',
+                ),
+                dmc.Divider(mb="lg"),
+                dmc.Flex(
+                    children=[
+                        dmc.Title("Simulação", className="menu-title", order=6, w="100%"),
+                        dmc.Select(
+                            id="simulation-select",
+                            data=[],
+                            placeholder="Selecione a simulação",
+                            disabled=True,
+                            maw="800px",
+                            w="80%",
+                        ),
+                        dmc.Button(
+                            "Nova simulação",
+                            id="new-simulation-button",
+                            w="fit-content",
+                            n_clicks=0,
+                        ),
+                    ],
+                    direction="row",
+                    wrap="wrap",
+                    justify="space-between",
+                    my="md",
+                    mx="md",
+                    style={"boxSize": "content-box"},
+                ),
+                page_container
+            ],
+            direction="column"),
         dcc.Store(id="simulations"),
         
     ],

@@ -20,6 +20,10 @@ register_page(
     "indicadores",
     path="/indicatores",
     layout=[
-        
+        dmc.Card(
+            children=[
+                
+            ]
+        )
     ]
 )
