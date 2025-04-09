@@ -40,7 +40,6 @@ def with_gd_storage_simulation(dss,storages):
             if dss.cktelement.is_enabled == 1:
                 dss.cktelement.enabled(0)
     for storage in storages:
-        print(storage)
         dss.text(f"New Storage.Bateria{storage[0]} bus=P{storage[0]}.1.2.3.4 phases=3 kv=0.22 conn=wye kwrated={storage[1]} kwhrated={storage[2]} %stored=0.0 dispmode=follow daily=CurvaBAT")
     dss.solution.solve()
 
@@ -56,8 +55,6 @@ def intialize_voltage_dataframes(v_monitors):
         np.zeros((144, len(v_monitors))), index=np.arange(stop=24, start=0, step=0.1666666667)
     )
     
-    print(va_df.shape)
-    print(vb_df.shape)
     va_df.columns = v_monitors
     vb_df.columns = v_monitors
     vc_df.columns = v_monitors
@@ -133,7 +130,6 @@ def get_voltage_dataframes(dss, monitors):
         v_dfs["va_df"][_] = dss.monitors.channel(1)
         v_dfs["vb_df"][_] = dss.monitors.channel(3)
         v_dfs["vc_df"][_] = dss.monitors.channel(5)
-    print(v_dfs["va_df"])
     return v_dfs
 
 def volts_to_pu(voltage: pd.DataFrame):
@@ -144,7 +140,7 @@ def volts_to_pu(voltage: pd.DataFrame):
 
 ## Instanciando o DSS
 def programa(id_value,option="without-storage",storage_specs=[]):
-    
+    print('Tá errado ai irmão')
     
     dss = pydss.DSS()
     project_file = os.path.join(os.path.dirname(__file__), "circbtfull_storage.dss")
@@ -194,8 +190,11 @@ def programa(id_value,option="without-storage",storage_specs=[]):
 
     
     v_buses_quality = pd.DataFrame()
-    # for column in voltages['va_df'].columns:
-    #     v_buses_quality[column] = voltage_quality(voltages,column)
+    for column in voltages['va_df'].columns:
+        v_buses_quality[column] = voltage_quality(voltages,column)
+        
+    print('V_quality')
+    print(v_buses_quality)
     data = dict(
         {
             "id": id_value,
@@ -210,6 +209,7 @@ def programa(id_value,option="without-storage",storage_specs=[]):
             "qc": powers[5].to_json(orient="split"),
             "p0": powers[6].to_json(orient="split"),
             "q0": powers[7].to_json(orient="split"),
+            'v_indicators': v_buses_quality.to_json(orient='split')
         }
     )
     
@@ -252,15 +252,31 @@ def voltage_quality(voltages,column):
     percentil_99_c = np.percentile(voltages["vc_df"][column], 9)
     percentil_1_c = np.percentile(voltages["vc_df"][column], 1)
     
-    print(f'************ BARRA {column} *****************************************')
-    print('************ Indicadores de tensão em regime permanente **************')
-    print('                Fase A        Fase B       Fase C')
-    print(f'DRP (%)         {DRP_A:0.2f}          {DRP_B:0.2f}         {DRP_C:0.2f}')
-    print(f'DRC (%)         {DRC_A:0.2f}          {DRC_B:0.2f}         {DRC_C:0.2f}')
-    print(f'P99% (V)        {percentil_99_a:0.2f}        {percentil_99_b:0.2f}       {percentil_99_c:0.2f}')
-    print(f'P1% (V)         {percentil_1_a:0.2f}        {percentil_1_b:0.2f}       {percentil_1_c:0.2f}')
-    print('**********************************************************************')
+    # print(f'************ BARRA {column} *****************************************')
+    # print('************ Indicadores de tensão em regime permanente **************')
+    # print('                Fase A        Fase B       Fase C')
+    # print(f'DRP (%)         {DRP_A:0.2f}          {DRP_B:0.2f}         {DRP_C:0.2f}')
+    # print(f'DRC (%)         {DRC_A:0.2f}          {DRC_B:0.2f}         {DRC_C:0.2f}')
+    # print(f'P99% (V)        {percentil_99_a:0.2f}        {percentil_99_b:0.2f}       {percentil_99_c:0.2f}')
+    # print(f'P1% (V)         {percentil_1_a:0.2f}        {percentil_1_b:0.2f}       {percentil_1_c:0.2f}')
+    # print('**********************************************************************')
     
+    data = pd.DataFrame([
+        DRP_A,
+        DRP_B,
+        DRP_C,
+        DRC_A,
+        DRC_B,
+        DRC_C,  
+    ],index=[
+        'DRP_A',
+        'DRP_B',
+        'DRP_C',
+        'DRC_A',
+        'DRC_B',
+        'DRC_C',
+    ])
+    return data
     
     
 if __name__ == "__main__":
