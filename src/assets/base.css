@@ -1,0 +1,27 @@
+.header-fluid{
+    gap:var(--mantine-spacing-md);
+    padding:var(--mantine-spacing-lg) var(--mantine-spacing-md) var(--mantine-spacing-md) var(--mantine-spacing-lg);
+    flex-direction:column;
+    align-items: center;
+    justify-items:space-evenly;
+}
+
+.container-fluid{
+    flex-direction: column;
+    align-content: center;
+    width: 100%;
+}
+.nav-bar{
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    flex-flow:row nowrap;
+
+}
+
+@media (max-width: 48em) {
+    .nav-bar{
+        display:none;
+
+    }
+}

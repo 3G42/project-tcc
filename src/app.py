@@ -1,13 +1,13 @@
 from dash import (
     Dash,
     page_container,
-    dcc
+    dcc 
 )
 import dash_mantine_components as dmc
 
 
 
-app = Dash(__name__,external_stylesheets=dmc.styles.ALL,use_pages=True)
+app = Dash(__name__,external_stylesheets=dmc.styles.ALL,use_pages=True,suppress_callback_exceptions=True)
 app.layout = dmc.MantineProvider(
     [
         # HEADER
@@ -16,73 +16,44 @@ app.layout = dmc.MantineProvider(
                         dmc.Title(
                             children="Simulador de Redes Elétricas",
                             order=1,
-                            c="blue.9",
+                            c="blue.9", # type: ignore
                             
                         ),
                         dmc.Text(
                             "Análise do efeito da geração distribuída e armazenamento em uma rede elétrica de BT",
-                            c="gray.8",
+                            c="gray.8", # type: ignore
                             ta="center",
                             size="lg"
                         ),
                     ],
-                    className="header",
-                    direction="column",
-                    align="center",
-                    justify="space-evenly",
-                    gap="md",
-                    pt="lg",
-                    pb="md",
+                    className="header-fluid",
                 ),
         dmc.Flex(
             [ 
+                dmc.Burger(
+                    id='burger-button',
+                    opened=False,
+                    hiddenFrom='sm'
+                ),
+                
+                ## TODO-1 TERMINAR BOTÃO 
                 dmc.Box(
                     children=[
                         dmc.NavLink(label="home", href="/", active='exact'),
                         dmc.NavLink(label="indicadores",href='/indicators', active='exact'),
                     ],
-                    w="100%",
-                    display='flex',
+                    className='nav-bar',
                 ),
                 dmc.Divider(mb="lg"),
-                dmc.Flex(
-                    children=[
-                        dmc.Title("Simulação", className="menu-title", order=6, w="100%"),
-                        dmc.Select(
-                            id="simulation-select",
-                            data=[],
-                            placeholder="Selecione a simulação",
-                            disabled=True,
-                            maw="800px",
-                            w="80%",
-                        ),
-                        dmc.Button(
-                            "Nova simulação",
-                            id="new-simulation-button",
-                            w="fit-content",
-                            n_clicks=0,
-                        ),
-                    ],
-                    direction="row",
-                    wrap="wrap",
-                    justify="space-between",
-                    my="md",
-                    mx="md",
-                    style={"boxSize": "content-box"},
-                ),
+                
                 page_container
             ],
-            direction="column"),
+            className="container-fluid",
+            ),
         dcc.Store(id="simulations"),
-        
-    ],
+    ]
     
 )
-
-
-
-
-
 
 
 

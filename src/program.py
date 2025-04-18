@@ -139,8 +139,7 @@ def volts_to_pu(voltage: pd.DataFrame):
     return voltage
 
 ## Instanciando o DSS
-def programa(id_value,option="without-storage",storage_specs=[]):
-    print('Tá errado ai irmão')
+def programa(id_value,option="without-gd-storage",storage_specs=[]):
     
     dss = pydss.DSS()
     project_file = os.path.join(os.path.dirname(__file__), "circbtfull_storage.dss")
@@ -193,8 +192,7 @@ def programa(id_value,option="without-storage",storage_specs=[]):
     for column in voltages['va_df'].columns:
         v_buses_quality[column] = voltage_quality(voltages,column)
         
-    print('V_quality')
-    print(v_buses_quality)
+
     data = dict(
         {
             "id": id_value,
@@ -281,3 +279,6 @@ def voltage_quality(voltages,column):
     
 if __name__ == "__main__":
     programa()
+
+
+#
