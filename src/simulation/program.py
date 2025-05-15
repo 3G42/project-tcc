@@ -139,9 +139,8 @@ def volts_to_pu(voltage: pd.DataFrame):
     return voltage
 
 ## Instanciando o DSS
-def programa(id_value,option="without-storage",storage_specs=[]):
-    print('Tá errado ai irmão')
-    
+
+def pre_solve():
     dss = pydss.DSS()
     project_file = os.path.join(os.path.dirname(__file__), "circbtfull_storage.dss")
     dss.text(f"Compile {project_file}")
@@ -167,8 +166,13 @@ def programa(id_value,option="without-storage",storage_specs=[]):
             f"New Monitor.P_{t} element=Transformer.{t} terminal=1 mode=1 ppolar=no"
         )
 
+    
+    return dss
+    
+def solve_simulation(dss,id_value,option="without-gd-storage",storage_specs=[]):
+    
     monitors = dss.monitors.names
-
+    
     match option:
         case "without-gd-storage":
             initial_state_simulation(dss)
@@ -193,27 +197,38 @@ def programa(id_value,option="without-storage",storage_specs=[]):
     for column in voltages['va_df'].columns:
         v_buses_quality[column] = voltage_quality(voltages,column)
         
-    print('V_quality')
-    print(v_buses_quality)
+    meter = dss.meters.register_values
+    feeder_energy = dss.meters.register_values[0]
+    feeder_losses = dss.meters.register_values[12]
     data = dict(
         {
             "id": id_value,
-            "va": volts_to_pu(voltages["va_df"]).to_json(orient="split"),
-            "vb": volts_to_pu(voltages["vb_df"]).to_json(orient="split"),
-            "vc": volts_to_pu(voltages["vc_df"]).to_json(orient="split"),
-            "pa": powers[0].to_json(orient="split"),
-            "qa": powers[1].to_json(orient="split"),
-            "pb": powers[2].to_json(orient="split"),
-            "qb": powers[3].to_json(orient="split"),
-            "pc": powers[4].to_json(orient="split"),
-            "qc": powers[5].to_json(orient="split"),
-            "p0": powers[6].to_json(orient="split"),
-            "q0": powers[7].to_json(orient="split"),
-            'v_indicators': v_buses_quality.to_json(orient='split')
+            "va": volts_to_pu(voltages["va_df"]),
+            "vb": volts_to_pu(voltages["vb_df"]),
+            "vc": volts_to_pu(voltages["vc_df"]),
+            "pa": powers[0],
+            "qa": powers[1],
+            "pb": powers[2],
+            "qb": powers[3],
+            "pc": powers[4],
+            "qc": powers[5],
+            "p0": powers[6],
+            "q0": powers[7],
+            'v_indicators': v_buses_quality,
+            'feeder_energy': feeder_energy,
+            'feeder_losses': feeder_losses,
         }
     )
     
 
+    return data
+
+
+def programa(id_value,option="without-gd-storage",storage_specs=[]):
+    
+    dss = pre_solve()
+    data = solve_simulation(dss,id_value,option,storage_specs)
+    dss.text("Clear")
     return data
 
 
@@ -280,4 +295,7 @@ def voltage_quality(voltages,column):
     
     
 if __name__ == "__main__":
-    programa()
+    programa(1)
+
+
+#
