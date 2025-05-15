@@ -3,14 +3,14 @@ from typing import Dict, List, Union
 from dash import dcc, Input, Output, callback, State, callback_context, register_page
 import dash_mantine_components as dmc
 import pandas as pd
-from program import programa
+from simulation.program import programa
 from dash.exceptions import PreventUpdate
 import plotly.express as px
 
 
 def initial_json_load():
 
-    with open(r"src\\data.json") as f:
+    with open(r"src\\web\\data.json") as f:
         data = json.load(f)
     data_processed = json.dumps(data)
     return data_processed
@@ -300,6 +300,10 @@ def select_graph(value, simulation, data):
     df = pd.DataFrame(**(json.loads(simulation_data[value])))
     if df.empty:
         raise PreventUpdate
+    
+    print(simulation_data['id'])
+    print(f'Feeder Losses: {simulation_data['feeder_losses']}')
+    print(f'Feeder Energy: {simulation_data['feeder_energy']}')
 
     fig = px.line(df, x=df.index, y=df.columns)
     fig.update_layout(

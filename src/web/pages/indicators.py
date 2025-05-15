@@ -15,9 +15,10 @@ from dash.dash_table.Format import Format, Scheme, Trim, Align
 import dash_mantine_components as dmc
 import numpy as np
 import pandas as pd
-from program import programa
 from dash.exceptions import PreventUpdate
 import plotly.express as px
+
+
 
 
 def truncate_value(x):
