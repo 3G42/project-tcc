@@ -51,7 +51,7 @@ app.layout = dmc.MantineProvider(
             ],
             className="container-fluid",
             ),
-        dcc.Store(id="simulations"),
+        dcc.Store(id="simulations", data=dict()),
     ]
     
 )
