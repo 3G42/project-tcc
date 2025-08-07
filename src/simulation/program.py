@@ -4,6 +4,9 @@ import numpy as np
 import pandas as pd
 import py_dss_interface as pydss
 
+from utils import drp_drc_define
+
+
 
 def str_to_time(string: str):
     return datetime.datetime.strptime(string, "%H:%M")
@@ -286,4 +289,11 @@ def voltage_quality(voltages, column):
 
 
 if __name__ == "__main__":
-    programa(option="with-gd-storage", storage_specs=[[10, 10, 100]])
+    start_case = programa(option="with-gd-without-storage")
+    drps_start_case, drcs_start_case = drp_drc_define(start_case['v_indicators'])
+    max_drp_start = drps_start_case.max()
+    max_drc_start = drcs_start_case.max()
+
+
+    # Verifica exportação de energia (fluxo reverso)
+

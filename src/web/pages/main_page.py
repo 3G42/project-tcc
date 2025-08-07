@@ -3,18 +3,10 @@ from typing import Dict, List, Union
 from dash import dcc, Input, Output, callback, State, callback_context, register_page
 import dash_mantine_components as dmc
 import pandas as pd
-from simulation.program import programa
 from dash.exceptions import PreventUpdate
 import plotly.express as px
 
-
-def initial_json_load():
-
-    with open(r"src\\web\\data.json") as f:
-        data = json.load(f)
-    data_processed = json.dumps(data)
-    return data_processed
-
+from src.simulation.program import programa
 
 params_storage = ["Barra", "Potencia nominal", "Energia nominal"]
 
@@ -244,24 +236,25 @@ def add_simulation(
     n_clicks,
     sim_type: str,
     storage_data: Dict[str, List[Union[str, List[Union[str, float]]]]],
-    previous_data,
+    previous_data:dict,
 ):
     if type(n_clicks) is int and n_clicks > 0:
         storage = [
             f"Bus:{a[0]} Power:{a[1]} Energy:{a[2]}" for a in storage_data["body"]
         ]
         id_value = f"{sim_type.replace('-',' ').capitalize()} {' and '.join(storage)}"
-        previous = {} if previous_data is None else json.loads(previous_data)
-        if id_value in previous.keys():
+        print(f"previous_data: {previous_data}")
+        if id_value in previous_data.keys():
             print("yes")
             return previous_data
-        simulation = programa(id_value, sim_type, storage_data["body"])
-        previous[id_value] = simulation
-        save_json(previous)
-        data = json.dumps(previous)
-        return data
-    return initial_json_load()
-
+        simulation = programa( sim_type, storage_data["body"])
+        for key in simulation.keys():
+            if isinstance(simulation[key], pd.DataFrame):
+                simulation[key] = simulation[key].to_json(orient="split")
+        previous_data[id_value] = simulation
+        return previous_data
+    return {}
+ 
 
 @callback(
     Output("simulation-select", "data"),
@@ -273,10 +266,9 @@ def add_simulation(
 def update_simulation_select(data):
     if data is None:
         return [], True, True
-    obj: dict = json.loads(data)
     options = []
-    for k, v in obj.items():
-        options = options + [{"label": v["id"], "value": k}]
+    for k in data.keys():
+        options = options + [{"label": k, "value": k}]
     return options, False, False
 
 
@@ -291,19 +283,14 @@ def update_simulation_select(data):
 def select_graph(value, simulation, data):
     if simulation is None or data is None:
         raise PreventUpdate
-    obj = json.loads(data)
 
-    simulation_data = obj[simulation]
+    simulation_data = data[simulation]
     if simulation_data is None or value is None:
         raise PreventUpdate
 
     df = pd.DataFrame(**(json.loads(simulation_data[value])))
     if df.empty:
         raise PreventUpdate
-    
-    print(simulation_data['id'])
-    print(f'Feeder Losses: {simulation_data['feeder_losses']}')
-    print(f'Feeder Energy: {simulation_data['feeder_energy']}')
 
     fig = px.line(df, x=df.index, y=df.columns)
     fig.update_layout(
@@ -327,6 +314,3 @@ def clear_select(value):
     return None
 
 
-def save_json(data):
-    with open("data.json", "w", encoding="utf-8") as f:
-        json.dump(data, f, ensure_ascii=False, indent=4)
