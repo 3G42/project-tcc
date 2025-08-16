@@ -34,6 +34,7 @@ register_page(
     path="/",
     layout=[
         # Seletor de simulação
+
         dmc.Flex(
             children=[
                         dmc.Select(

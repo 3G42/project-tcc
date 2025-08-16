@@ -4,8 +4,7 @@ import numpy as np
 import pandas as pd
 import py_dss_interface as pydss
 
-from utils import drp_drc_define
-
+from src.analysis.utils import drp_drc_define
 
 
 def str_to_time(string: str):

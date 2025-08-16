@@ -4,7 +4,23 @@ from dash.exceptions import PreventUpdate
 
 import dash_mantine_components as dmc
 
-from src.analysis.iterative import  executar_todas_solucoes_com_fitness
+from src.analysis.iterative import executar_todas_solucoes_com_fitness
+from src.simulation.GA import rodar_ga
+
+
+values_types = [
+    {"label": "Tensão (va)", "value": "va"},
+    {"label": "Tensão (vb)", "value": "vb"},
+    {"label": "Tensão (vc)", "value": "vc"},
+    {"label": "Potência ativa (pa)", "value": "pa"},
+    {"label": "Potência ativa (pb)", "value": "pb"},
+    {"label": "Potência ativa (pc)", "value": "pc"},
+    {"label": "Potência reativa (qa)", "value": "qa"},
+    {"label": "Potência reativa (qb)", "value": "qb"},
+    {"label": "Potência reativa (qc)", "value": "qc"},
+]
+
+
 
 register_page(
     "iterative",
@@ -14,15 +30,19 @@ register_page(
             children=[
             dmc.Group(
                 [
-                    dmc.NumberInput(id='max_bess', label='Número máximo de BESS', min=1, max=10),
-                    dmc.NumberInput(id='total_power_bess', label='Potência total de BESS', min=1, max=1000, placeholder='Informe a potência total de BESS (será distribuído igualmente entre os BESS)'),
+                    dmc.NumberInput(id='qtt_bess', label='Quantidade de BESS', min=2, max=10),
+                    dmc.NumberInput(id='total_power_bess', label='Potência total de BESS', min=1, max=1000, placeholder='Informe a potência total de BESS'),
                     dmc.NumberInput(id='total_energy_bess', label='Energia total de BESS', min=1, max=1000, placeholder='Informe a energia total dos BESS'),
+                    dmc.NumberInput(id='generations-input', label='Quantidade de gerações da GA', min=10, max=200, placeholder='Informe a quantidade gerações'),
+                    dmc.NumberInput(id='population-size-input', label='Quantidade de individuos por geração', min=6, max=50,
+                                    placeholder='Informe a quantidade individuos por geração')
+
                 ],
                 
             ),
             dmc.Button(
                 id='submit-button',
-                children='Executar busca analítica',
+                children='Executar busca com GA',
                 n_clicks=0,
                 color='blue',
                 variant='outline',
@@ -35,6 +55,25 @@ register_page(
                 loaderProps={'color': 'blue.9'},
                 className='loading-overlay'
             ),
+            dmc.Group(id="visualization-container", children=[
+                dmc.Stack(
+                    children=[
+                        dmc.Select(
+                            id="value-select",
+                            label="Selecione as variáveis a serem monitoradas",
+                            value=[],  # type: ignore
+                            data=values_types,  # type: ignore
+                            disabled=True,
+                            maw="800px",
+                            w="80%",
+                            mx="md",
+                        ),
+                        dmc.Tree(data=[], checkboxes=True, id='tree-checkboxes')
+
+                    ]
+                )
+
+            ]),
             dmc.Select(
                 id='simulations_select',
                 label='Simulações',
@@ -53,28 +92,49 @@ register_page(
         ),
     ]
 )
+@callback(
+    Output("simulation-select", "data"),
+    Output("simulation-select", "disabled"),
+    Output("value-select", "disabled"),
+    Input("simulations", "data"),
+    prevent_initial_call=True,
+)
+def update_simulation_select(data):
+    if data is None:
+        return [], True, True
+    options = []
+    for k in data.keys():
+        options = options + [{"label": k, "value": k}]
+    return options, False, False
+
 
 @callback(
-    Output('simulations_select','data'),
+    Output('','data'),
     Output('store','data'),
     Input('submit-button','n_clicks'),
-    State('max_bess','value'),
+    State('qtt_bess','value'),
     State('total_power_bess','value'),
-    State('total_energy_bess','value'),
+    State('total_energy_bess', 'value'),
+    State('generations-input','value'),
+    State('population-size-input', 'value'),
+
     prevent_initial_call=True
 )
-def submit_button_search(n_clicks, max_bess, total_power_bess, total_energy_bess):
+def submit_button_search(n_clicks, qtt_bess, total_power_bess, total_energy_bess,gen,pop_size):
     if n_clicks == 0:
         raise PreventUpdate
     
     # Simulação de busca analítica
-    if max_bess is None or total_power_bess is None or total_energy_bess is None:
+    if qtt_bess is None or total_power_bess is None or total_energy_bess is None or gen is None or pop_size is None:
         raise PreventUpdate
-    simulations = executar_todas_solucoes_com_fitness()
+    simulations = rodar_ga(N_BATERIAS=qtt_bess, P_TOTAL_MAX=total_power_bess,E_TOTAL_MAX=total_energy_bess,POP_SIZE=pop_size,GERACOES=gen)
+
+    generations_names = [f'Gen:{idx}-{simulations[idx][0]} 'for idx in range(len(simulations))]
+
+    for simulations
     # save_json(simulations)
-    sim_names = [s['simulation_name'] for s in simulations]
     # Atualiza o estado do componente Store com os dados da simulação
-    return sim_names, json.dumps(simulations)
+    return generations_names, json.dumps(simulations)
 
 # @callback(
 #     Output("graph_iterative", "style"),
